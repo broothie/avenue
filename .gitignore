@@ -1,0 +1,6 @@
+
+gin-bin
+openapi.yml
+openapi.yaml
+openapi.json
+cmd/server/
