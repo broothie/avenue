@@ -1,0 +1,24 @@
+paths:
+  /api/v1/users:
+    get:
+      summary: user index
+      parameters:
+      - in: query
+        name: page
+        required: true
+      - in: header
+        name: accept
+        required: false
+  /api/v1/users/{user_id}:
+    get:
+      summary: user show
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+      - in: query
+        name: admin
+        required: false
+  /api/v1/users/events:
+    get: {}
+    post: {}
