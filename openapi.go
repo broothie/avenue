@@ -17,8 +17,9 @@ type (
 	Endpoints map[string]Endpoint
 
 	Endpoint struct {
-		Summary    string      `yaml:"summary,omitempty"`
-		Parameters []Parameter `yaml:"parameters,omitempty"`
+		Summary     string      `yaml:"summary"`
+		Description string      `yaml:"description"`
+		Parameters  []Parameter `yaml:"parameters,omitempty"`
 	}
 
 	Parameter struct {
@@ -54,8 +55,9 @@ func (r *Route) GenerateDoc() error {
 		}
 
 		endpoints[strings.ToLower(route.method)] = Endpoint{
-			Summary:    route.summary,
-			Parameters: parameters,
+			Summary:     route.summary,
+			Description: route.description,
+			Parameters:  parameters,
 		}
 	}
 

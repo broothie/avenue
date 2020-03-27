@@ -1,6 +1,9 @@
 package drr
 
-import gopath "path"
+import (
+	"net/http"
+	gopath "path"
+)
 
 func (r *Route) Method(method string) *Route {
 	route := r.newChild()
@@ -32,8 +35,20 @@ func (r *Route) Headers(headers ...Pair) *Route {
 	return route
 }
 
+func (r *Route) Middleware(middleware ...func(http.Handler) http.Handler) *Route {
+	route := r.newChild()
+	route.middlewares = append(route.middlewares, middleware...)
+	return route
+}
+
 func (r *Route) Summary(summary string) *Route {
 	route := r.newChild()
 	route.summary = summary
+	return route
+}
+
+func (r *Route) Description(description string) *Route {
+	route := r.newChild()
+	route.description = description
 	return route
 }

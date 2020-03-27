@@ -77,11 +77,19 @@ func (r *Route) addRoute(route *Route) {
 			Path(route.path).
 			Queries(queries...).
 			HeadersRegexp(headers...).
-			Handler(route.handler)
+			Handler(applyMiddlewares(route.handler, route.middlewares...))
 	}
 
 	r.router = router
 	if r.parent != nil {
 		r.parent.addRoute(route)
 	}
+}
+
+func applyMiddlewares(handler http.Handler, middlewares ...func(http.Handler) http.Handler) http.Handler {
+	for _, middleware := range middlewares {
+		handler = middleware(handler)
+	}
+
+	return handler
 }

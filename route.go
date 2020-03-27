@@ -7,13 +7,15 @@ import (
 )
 
 type Route struct {
-	method  string
-	path    string
-	queries []Pair
-	headers []Pair
-	handler http.Handler
+	method      string
+	path        string
+	queries     []Pair
+	headers     []Pair
+	handler     http.Handler
+	middlewares []func(http.Handler) http.Handler
 
-	summary string
+	summary     string
+	description string
 
 	parent *Route
 	routes []*Route
