@@ -3,11 +3,10 @@ package ave
 import (
 	"fmt"
 	"net/http"
-	"sort"
 	"strings"
 	"sync"
 
-	"github.com/gorilla/mux"
+	"github.com/broothie/avenue/internal/router"
 )
 
 func (r *Route) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -43,13 +42,13 @@ func (r *Route) addEndpoint(endpoint *Route, wg *sync.WaitGroup) {
 	r.router = buildRouter(r.endpoints)
 }
 
-func buildRouter(endpoints []*Route) *mux.Router {
-	sort.SliceStable(sortEndpoints(endpoints))
-
-	router := mux.NewRouter()
+func buildRouter(endpoints []*Route) router.Router {
+	router := router.New()
 	for _, endpoint := range endpoints {
+		q := make(map[string]string)
 		var queries []string
 		for _, pair := range endpoint.queries {
+			q[pair.Name] = pair.Value
 			if pair.Required {
 				value := pair.Value
 				if value == "" {
@@ -60,8 +59,10 @@ func buildRouter(endpoints []*Route) *mux.Router {
 			}
 		}
 
+		h := make(map[string]string)
 		var headers []string
 		for _, pair := range endpoint.headers {
+			h[pair.Name] = pair.Value
 			if pair.Required {
 				value := pair.Value
 				if pair.Value == "" {
@@ -72,12 +73,19 @@ func buildRouter(endpoints []*Route) *mux.Router {
 			}
 		}
 
-		router.
-			Methods(endpoint.method).
-			Path(endpoint.path).
-			Queries(queries...).
-			HeadersRegexp(headers...).
-			Handler(applyMiddlewares(endpoint.handler, endpoint.middlewares...))
+		//router.
+		//	Methods(endpoint.method).
+		//	Path(endpoint.path).
+		//	Queries(queries...).
+		//	HeadersRegexp(headers...).
+		//	Handler(applyMiddlewares(endpoint.handler, endpoint.middlewares...))
+		router.AddRoute(
+			endpoint.method,
+			endpoint.path,
+			q,
+			h,
+			applyMiddlewares(endpoint.handler, endpoint.middlewares...),
+		)
 	}
 
 	return router

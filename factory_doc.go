@@ -1,26 +1,5 @@
 package ave
 
-import (
-	"net/http"
-	"path"
-
-	"github.com/broothie/avenue/openapi"
-	"github.com/go-openapi/runtime/middleware"
-)
-
-func (r *Route) Doc() {
-	opts := middleware.RedocOpts{BasePath: r.path, SpecURL: path.Join(r.path, "/specs/{_:.*}")}
-
-	r.
-		Method(http.MethodGet).
-		Path("/specs/{_:.*}").
-		Handler(openapi.SpecHandler(r.Root()))
-
-	r.
-		Method(http.MethodGet).
-		Handler(middleware.Redoc(opts, http.NotFoundHandler()))
-}
-
 func (r *Route) DocOmit() *Route {
 	route := r.newChild()
 	route.documentation.Skip = true

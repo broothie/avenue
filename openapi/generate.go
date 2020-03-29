@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/broothie/avenue/endpoint"
+	ave "github.com/broothie/avenue"
 )
 
-func GenerateFile(route endpoint.EndpointInfoer, options ...Option) error {
+func GenerateFile(route *ave.Route, options ...Option) error {
 	var opts Options
 	for _, option := range options {
 		opts = option(opts)
@@ -18,7 +18,7 @@ func GenerateFile(route endpoint.EndpointInfoer, options ...Option) error {
 	return generateFile(makePaths(route, opts.version()), opts)
 }
 
-func SpecHandler(route endpoint.EndpointInfoer, options ...Option) http.HandlerFunc {
+func SpecHandler(route *ave.Route, options ...Option) http.HandlerFunc {
 	var opts Options
 	for _, option := range options {
 		opts = option(opts)

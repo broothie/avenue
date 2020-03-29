@@ -3,7 +3,7 @@ package ave
 import (
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/broothie/avenue/internal/router"
 )
 
 type (
@@ -19,48 +19,28 @@ type (
 
 		parent    *Route
 		endpoints []*Route
-		router    *mux.Router
+		router    router.Router
+		//router    *mux.Router
 	}
 
-	Documentation struct {
-		Skip        bool
-		Summary     string
-		Description string
-		Body        []Key
-		Responses   []Response
-	}
-
-	Key struct {
-		Name     string
-		Type     string
-		Required bool
-	}
-
-	Query  Pair
-	Header Pair
-	Pair   struct {
+	Pair struct {
 		Name     string
 		Value    string
 		Type     string
 		Required bool
 	}
 
-	Response struct {
-		Status      int
-		Description string
-		Content     map[string]Schema
-	}
+	Query  Pair
+	Header Pair
 
-	Schema struct {
-		Type    string
-		Example string
-	}
+	Queries []Query
+	Headers []Header
 )
 
 func New(path string) *Route {
 	return &Route{
 		path:   path,
-		router: mux.NewRouter(),
+		router: router.New(),
 	}
 }
 
@@ -86,6 +66,8 @@ func (r *Route) newChild() *Route {
 func (r *Route) copy() *Route {
 	newRoute := new(Route)
 	*newRoute = *r
+	newRoute.documentation.Summary = ""
+	newRoute.documentation.Description = ""
 
 	queries := make([]Query, len(r.queries))
 	copy(queries, r.queries)
