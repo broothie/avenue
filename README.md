@@ -9,6 +9,7 @@ Avenue uses [gorilla/mux](http://www.gorillatoolkit.org/pkg/mux) under the hood.
 
 - [x] Generate/merge docs
 - [x] Print routes
+- [ ] Implement custom router?
 - [ ] Add documentation
 - [ ] Add commands
 - [ ] Tests
