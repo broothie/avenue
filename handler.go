@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/gorilla/mux"
 )
@@ -13,7 +14,6 @@ func (r *Route) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	r.router.ServeHTTP(writer, request)
 }
 
-//go:generate go run generate_method_funcs.go -tags=generate
 func (r *Route) Handler(handler http.Handler) {
 	endpoint := r.newChild()
 	if r.method == "" {
@@ -21,68 +21,82 @@ func (r *Route) Handler(handler http.Handler) {
 	}
 
 	endpoint.handler = handler
-	r.addRoute(endpoint)
+
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	go r.addEndpoint(endpoint, wg)
+	wg.Wait()
 }
 
 func (r *Route) HandlerFunc(handlerFunc http.HandlerFunc) {
 	r.Handler(handlerFunc)
 }
 
-func (r *Route) addRoute(route *Route) {
-	r.routes = append(r.routes, route)
+func (r *Route) addEndpoint(endpoint *Route, wg *sync.WaitGroup) {
+	defer wg.Done()
+	if r.parent != nil {
+		wg.Add(1)
+		go r.parent.addEndpoint(endpoint, wg)
+	}
 
-	sort.SliceStable(r.routes, func(i, j int) bool {
-		leftRoute, rightRoute := r.routes[i], r.routes[j]
-		leftSegments, rightSegments := strings.Split(leftRoute.path, "/"), strings.Split(rightRoute.path, "/")
-		if len(leftSegments) != len(rightSegments) {
-			return len(leftSegments) < len(rightSegments)
-		}
+	r.endpoints = append(r.endpoints, endpoint)
+	r.router = buildRouter(r.endpoints)
+}
 
-		leftLast, rightLast := leftSegments[len(leftSegments)-1], rightSegments[len(rightSegments)-1]
-		if leftLast[0] == '{' && rightLast[0] != '{' {
-			return false
-		}
-
-		return len(leftLast) < len(rightLast)
-	})
+func buildRouter(endpoints []*Route) *mux.Router {
+	sort.SliceStable(sortEndpoints(endpoints))
 
 	router := mux.NewRouter()
-	for _, route := range r.routes {
+	for _, endpoint := range endpoints {
 		var queries []string
-		for _, pair := range route.queries {
+		for _, pair := range endpoint.queries {
 			if pair.Required {
 				value := pair.Value
 				if value == "" {
-					value = fmt.Sprintf("{%s}", pair.Key)
+					value = fmt.Sprintf("{%s}", pair.Name)
 				}
 
-				queries = append(queries, pair.Key, value)
+				queries = append(queries, pair.Name, value)
 			}
 		}
 
 		var headers []string
-		for _, pair := range route.headers {
+		for _, pair := range endpoint.headers {
 			if pair.Required {
 				value := pair.Value
 				if pair.Value == "" {
 					value = ".*"
 				}
 
-				headers = append(headers, pair.Key, value)
+				headers = append(headers, pair.Name, value)
 			}
 		}
 
 		router.
-			Methods(route.method).
-			Path(route.path).
+			Methods(endpoint.method).
+			Path(endpoint.path).
 			Queries(queries...).
 			HeadersRegexp(headers...).
-			Handler(applyMiddlewares(route.handler, route.middlewares...))
+			Handler(applyMiddlewares(endpoint.handler, endpoint.middlewares...))
 	}
 
-	r.router = router
-	if r.parent != nil {
-		r.parent.addRoute(route)
+	return router
+}
+
+func sortEndpoints(endpoints []*Route) ([]*Route, func(i, j int) bool) {
+	return endpoints, func(i, j int) bool {
+		left, right := endpoints[i], endpoints[j]
+		lSegs, rSegs := strings.Split(left.path, "/"), strings.Split(right.path, "/")
+		if len(lSegs) != len(rSegs) {
+			return len(lSegs) < len(rSegs)
+		}
+
+		lLast, rLast := lSegs[len(lSegs)-1], rSegs[len(rSegs)-1]
+		if lLast[0] == '{' && rLast[0] != '{' {
+			return false
+		}
+
+		return len(lLast) < len(rLast)
 	}
 }
 

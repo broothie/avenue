@@ -9,33 +9,63 @@ import (
 type Route struct {
 	method      string
 	path        string
-	queries     []Pair
-	headers     []Pair
+	queries     []Query
+	headers     []Header
 	handler     http.Handler
 	middlewares []func(http.Handler) http.Handler
 
-	summary     string
-	description string
+	documentation Documentation
 
-	parent *Route
-	routes []*Route
-	router *mux.Router
+	parent    *Route
+	endpoints []*Route
+	router    *mux.Router
 }
 
-type Pair struct {
-	Key      string
-	Value    string
-	Required bool
+type Documentation struct {
+	Skip        bool
+	Summary     string
+	Description string
+	Body        []Key
+	Responses   []Response
 }
+
+type (
+	Key struct {
+		Name     string
+		Type     string
+		Required bool
+	}
+
+	Query  Pair
+	Header Pair
+	Pair   struct {
+		Name     string
+		Value    string
+		Type     string
+		Required bool
+	}
+
+	Response struct {
+		Status      int
+		Description string
+		Content     map[string]Schema
+	}
+
+	Schema struct {
+		Type    string
+		Example string
+	}
+)
 
 func New(path string) *Route {
 	return &Route{
-		path:    path,
-		queries: make([]Pair, 0),
-		headers: make([]Pair, 0),
-		routes:  make([]*Route, 0),
-		router:  mux.NewRouter(),
+		path:   path,
+		router: mux.NewRouter(),
 	}
+}
+
+func Root() *Route {
+	return New("/")
 }
 
 func (r *Route) newChild() *Route {
@@ -45,19 +75,32 @@ func (r *Route) newChild() *Route {
 }
 
 func (r *Route) copy() *Route {
-	queries := make([]Pair, len(r.queries))
-	copy(queries, r.queries)
-
-	headers := make([]Pair, len(r.headers))
-	copy(headers, r.headers)
-
-	routes := make([]*Route, len(r.routes))
-	copy(routes, r.routes)
-
 	newRoute := new(Route)
 	*newRoute = *r
+
+	queries := make([]Query, len(r.queries))
+	copy(queries, r.queries)
 	newRoute.queries = queries
+
+	headers := make([]Header, len(r.headers))
+	copy(headers, r.headers)
 	newRoute.headers = headers
-	newRoute.routes = routes
+
+	middlewares := make([]func(http.Handler) http.Handler, len(r.middlewares))
+	copy(middlewares, r.middlewares)
+	newRoute.middlewares = middlewares
+
+	body := make([]Key, len(r.documentation.Body))
+	copy(body, r.documentation.Body)
+	newRoute.documentation.Body = body
+
+	responses := make([]Response, len(r.documentation.Responses))
+	copy(responses, r.documentation.Responses)
+	newRoute.documentation.Responses = responses
+
+	endpoints := make([]*Route, len(r.endpoints))
+	copy(endpoints, r.endpoints)
+	newRoute.endpoints = endpoints
+
 	return newRoute
 }

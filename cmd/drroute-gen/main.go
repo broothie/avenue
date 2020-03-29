@@ -1,22 +1,28 @@
 package main
 
-import "flag"
+import (
+	"fmt"
+	"os"
+)
 
 const importFileFmt = `
 package main
 
 import (
+	"os"
 	"%s"
 )
 
 func main() {
-	route := %s()
-	route.GenerateDoc()
+	if err := openapi.Generate(%s()); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
 `
 
 func main() {
-	funcName := flag.String("func", "", "function which returns a *drr.Route")
-	flag.Parse()
+	if err := os.MkdirAll(fmt.Sprintf("%s/main.go"), os.ModePerm); err != nil {
 
+	}
 }

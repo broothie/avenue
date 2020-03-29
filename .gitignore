@@ -1,6 +1,9 @@
 
 gin-bin
+
 openapi.yml
 openapi.yaml
 openapi.json
-cmd/server/
+swagger.yml
+swagger.yaml
+swagger.json
