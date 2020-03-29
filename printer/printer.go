@@ -5,14 +5,14 @@ import (
 	"strconv"
 	"strings"
 
-	drr "github.com/broothie/drroute"
+	ave "github.com/broothie/avenue"
 )
 
-func Print(route *drr.Route) {
+func Print(route *ave.Route) {
 	fmt.Print(String(route))
 }
 
-func String(route *drr.Route) string {
+func String(route *ave.Route) string {
 	builder := new(strings.Builder)
 
 	endpoints := route.EndpointInfo()
@@ -21,19 +21,20 @@ func String(route *drr.Route) string {
 		builder.WriteString(fmt.Sprintf("%-"+strconv.Itoa(maxMethodLength)+"s %s", endpoint.Method, endpoint.Path))
 
 		if len(endpoint.Queries) > 0 {
+			queryBuilder := new(strings.Builder)
 			var queries []string
 			for _, query := range endpoint.Queries {
-				queryString := query.Name
+				queryBuilder.WriteString(query.Name)
 				if !query.Required {
-					queryString += "?"
+					queryBuilder.WriteString("?")
 				}
 
-				queryString += "="
+				queryBuilder.WriteString("=")
 				if query.Value != "" {
-					queryString += query.Value
+					queryBuilder.WriteString(query.Value)
 				}
 
-				queries = append(queries, queryString)
+				queries = append(queries, queryBuilder.String())
 				builder.WriteString(fmt.Sprintf("?%s", strings.Join(queries, "&")))
 			}
 		}
@@ -44,7 +45,7 @@ func String(route *drr.Route) string {
 	return builder.String()
 }
 
-func maxMethodLength(endpoints []drr.RouteInfo) int {
+func maxMethodLength(endpoints []ave.RouteInfo) int {
 	max := 0
 	for _, endpoint := range endpoints {
 		if len(endpoint.Method) > max {

@@ -1,7 +1,7 @@
 package examples
 
-import drr "github.com/broothie/drroute"
+import ave "github.com/broothie/avenue"
 
-func RouteFunc() *drr.Route {
-	return drr.Root()
+func RouteFunc() *ave.Route {
+	return ave.Root()
 }

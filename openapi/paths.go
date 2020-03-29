@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	drr "github.com/broothie/drroute"
+	ave "github.com/broothie/avenue"
 )
 
 type (
@@ -37,7 +37,7 @@ type (
 	}
 )
 
-func makePaths(route *drr.Route, version Version) Paths {
+func makePaths(route *ave.Route, version Version) Paths {
 	endpoints := route.EndpointInfo()
 
 	paths := make(Paths)

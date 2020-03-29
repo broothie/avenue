@@ -5,12 +5,12 @@ import (
 	"os"
 	"sort"
 
-	drr "github.com/broothie/drroute"
+	ave "github.com/broothie/avenue"
 	"github.com/imdario/mergo"
 	"github.com/pkg/errors"
 )
 
-func Generate(route *drr.Route, options ...Option) error {
+func Generate(route *ave.Route, options ...Option) error {
 	var opts Options
 	for _, option := range options {
 		opts = option(opts)

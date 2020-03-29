@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	drr "github.com/broothie/drroute"
 )
 
 func Routes() *drr.Route {

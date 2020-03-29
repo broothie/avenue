@@ -1,4 +1,4 @@
-package drr
+package ave
 
 func (r *Route) DocOmit() *Route {
 	route := r.newChild()

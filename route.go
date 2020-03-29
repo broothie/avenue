@@ -1,4 +1,4 @@
-package drr
+package ave
 
 import (
 	"net/http"
@@ -6,30 +6,30 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type Route struct {
-	method      string
-	path        string
-	queries     []Query
-	headers     []Header
-	handler     http.Handler
-	middlewares []func(http.Handler) http.Handler
-
-	documentation Documentation
-
-	parent    *Route
-	endpoints []*Route
-	router    *mux.Router
-}
-
-type Documentation struct {
-	Skip        bool
-	Summary     string
-	Description string
-	Body        []Key
-	Responses   []Response
-}
-
 type (
+	Route struct {
+		method      string
+		path        string
+		queries     []Query
+		headers     []Header
+		handler     http.Handler
+		middlewares []func(http.Handler) http.Handler
+
+		documentation Documentation
+
+		parent    *Route
+		endpoints []*Route
+		router    *mux.Router
+	}
+
+	Documentation struct {
+		Skip        bool
+		Summary     string
+		Description string
+		Body        []Key
+		Responses   []Response
+	}
+
 	Key struct {
 		Name     string
 		Type     string
