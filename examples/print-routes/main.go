@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/broothie/drroute/examples"
-	"github.com/broothie/drroute/printer"
+	"github.com/broothie/avenue/examples"
+	"github.com/broothie/avenue/printer"
 )
 
 func main() {

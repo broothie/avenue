@@ -2,15 +2,14 @@ package openapi
 
 import (
 	"io/ioutil"
+	"net/http"
 	"os"
-	"sort"
+	"strings"
 
-	ave "github.com/broothie/avenue"
-	"github.com/imdario/mergo"
-	"github.com/pkg/errors"
+	"github.com/broothie/avenue/endpoint"
 )
 
-func Generate(route *ave.Route, options ...Option) error {
+func GenerateFile(route endpoint.EndpointInfoer, options ...Option) error {
 	var opts Options
 	for _, option := range options {
 		opts = option(opts)
@@ -19,98 +18,64 @@ func Generate(route *ave.Route, options ...Option) error {
 	return generateFile(makePaths(route, opts.version()), opts)
 }
 
+func SpecHandler(route endpoint.EndpointInfoer, options ...Option) http.HandlerFunc {
+	var opts Options
+	for _, option := range options {
+		opts = option(opts)
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		segments := strings.Split(r.URL.Path, "/")
+		opts = OptionFilename(segments[len(segments)-1])(opts)
+
+		data, err := generateFreshSpecData(makePaths(route, opts.version()), opts)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Write(data)
+	}
+}
+
 func generateFile(paths Paths, options Options) error {
 	filepath := options.fileAndPath()
 	format := options.format()
-	version := options.version()
 
-	var dst Spec
+	var data []byte
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		dst = freshSpec(version)
+		if data, err = generateFreshSpecData(paths, options); err != nil {
+			return err
+		}
 	} else {
-		data, err := ioutil.ReadFile(filepath)
+		fileData, err := ioutil.ReadFile(filepath)
 		if err != nil {
 			return err
 		}
 
+		var spec Spec
 		unmarshaler := format.Unmarshaler()
-		if err := unmarshaler(data, &dst); err != nil {
+		if err := unmarshaler(fileData, &spec); err != nil {
 			return err
 		}
-	}
 
-	if err := mergo.Merge(&dst, Spec{Paths: paths}, mergo.WithOverride); err != nil {
-		return errors.Wrap(err, "")
-	}
-
-	for path, dstEndpoints := range dst.Paths {
-		srcEndpoints, ok := paths[path]
-		if !ok {
-			continue
+		marshaler := format.Marshaler()
+		if data, err = marshaler(spec); err != nil {
+			return err
 		}
-
-		for method, dstEndpoint := range dstEndpoints {
-			srcEndpoint, ok := srcEndpoints[method]
-			if !ok {
-				continue
-			}
-
-			parameters, err := mergeParams(dstEndpoint.Parameters, srcEndpoint.Parameters)
-			if err != nil {
-				return err
-			}
-
-			dstEndpoint.Parameters = parameters
-		}
-	}
-
-	marshaler := format.Marshaler()
-	data, err := marshaler(dst)
-	if err != nil {
-		return err
 	}
 
 	return ioutil.WriteFile(filepath, data, os.ModePerm)
 }
 
-func mergeParams(dst, src []Parameter) ([]Parameter, error) {
-	namedParams := make(map[string]*Parameter)
-	for _, param := range src {
-		namedParams[param.Name] = &param
+func generateFreshSpecData(paths Paths, options Options) ([]byte, error) {
+	spec := freshSpec(options.version())
+	spec.Paths = paths
+	marshaler := options.format().Marshaler()
+	data, err := marshaler(spec)
+	if err != nil {
+		return nil, err
 	}
 
-	for _, param := range dst {
-		dstParam, exists := namedParams[param.Name]
-		if !exists {
-			namedParams[param.Name] = &param
-			continue
-		}
-
-		if err := mergo.Merge(dstParam, param); err != nil {
-			return nil, err
-		}
-	}
-
-	params := make([]Parameter, len(namedParams))
-	counter := 0
-	for _, param := range namedParams {
-		params[counter] = *param
-		counter++
-	}
-
-	sort.SliceStable(params, func(i, j int) bool {
-		return indexOfParameterByName(params[i].Name, src) < indexOfParameterByName(params[j].Name, src)
-	})
-
-	return params, nil
-}
-
-func indexOfParameterByName(name string, params []Parameter) int {
-	for i, param := range params {
-		if param.Name == name {
-			return i
-		}
-	}
-
-	return -1
+	return data, nil
 }

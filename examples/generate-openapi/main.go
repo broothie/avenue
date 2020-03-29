@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/broothie/drroute/examples"
-
-	"github.com/broothie/drroute/openapi"
+	"github.com/broothie/avenue/examples"
+	"github.com/broothie/avenue/openapi"
 )
 
 func main() {
 	route := examples.RouteFunc()
-	if err := openapi.Generate(route); err != nil {
+	if err := openapi.GenerateFile(route); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}

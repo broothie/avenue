@@ -25,7 +25,7 @@ func freshSpec(version Version) Spec {
 
 	default:
 		return Spec{
-			Swagger: V3_0_0,
+			OpenAPI: V3_0_0,
 			Info:    info(),
 		}
 	}

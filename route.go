@@ -68,6 +68,15 @@ func Root() *Route {
 	return New("/")
 }
 
+func (r *Route) Root() *Route {
+	root := r
+	for root.parent != nil {
+		root = root.parent
+	}
+
+	return root
+}
+
 func (r *Route) newChild() *Route {
 	child := r.copy()
 	child.parent = r

@@ -4,16 +4,16 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/broothie/drroute/cmd/server/routes"
-	"github.com/broothie/drroute/openapi"
-	"github.com/broothie/drroute/printer"
+	"github.com/broothie/avenue/cmd/server/routes"
+	"github.com/broothie/avenue/openapi"
+	"github.com/broothie/avenue/printer"
 )
 
 func main() {
 	api := routes.Routes()
 
 	printer.Print(api)
-	if err := openapi.Generate(api); err != nil {
+	if err := openapi.GenerateFile(api); err != nil {
 		log.Panic(err)
 	}
 

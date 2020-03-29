@@ -4,27 +4,49 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	ave "github.com/broothie/avenue"
+	"github.com/broothie/avenue/openapi"
+	"github.com/go-openapi/runtime/middleware"
 )
 
-func Routes() *drr.Route {
-	route := drr.Root()
+var redocOpts = middleware.RedocOpts{
+	BasePath: "/api/v1",
+	SpecURL:  "/api/v1/docs/specs/openapi.yml",
+}
+
+func Routes() *ave.Route {
+	route := ave.Root()
 
 	route.
-		DocOmit().
 		DocSummary("file server").
 		Method(http.MethodGet).
-		Handler(http.FileServer(http.Dir(".")))
+		Path("/static/{_:.*}").
+		Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("."))))
 
-	route.Path("api").Nest(func(route *drr.Route) {
-		route.Path("v1").Nest(func(route *drr.Route) {
-			route.Path("users").Nest(func(route *drr.Route) {
+	route.Path("api").Nest(func(route *ave.Route) {
+		route.Path("v1").Nest(func(route *ave.Route) {
+			route.Path("docs").Nest(func(route *ave.Route) {
+				route.
+					DocSummary("api docs").
+					Method(http.MethodGet).
+					Handler(middleware.Redoc(redocOpts, http.NotFoundHandler()))
+
+				route.
+					DocSummary("OpenAPI spec").
+					Method(http.MethodGet).
+					Path("/specs/{_:.*}").
+					Handler(openapi.SpecHandler(route.Root()))
+			})
+
+			route.Path("users").Nest(func(route *ave.Route) {
 				route = route.Middleware(timeMiddleware)
 
 				route.
 					DocSummary("index users").
 					DocDescription("returns a list of users").
 					Method(http.MethodGet).
-					Queries(drr.Query{Name: "page", Type: "integer", Required: true}).
+					Queries(ave.Query{Name: "page", Type: "integer", Required: true}).
 					HandlerFunc(indexUsers)
 
 				route.
@@ -33,11 +55,11 @@ func Routes() *drr.Route {
 					Method(http.MethodPost).
 					HandlerFunc(indexUsers)
 
-				route.Path("{user_id}").Nest(func(route *drr.Route) {
+				route.Path("{user_id}").Nest(func(route *ave.Route) {
 					route.
 						DocSummary("show user").
 						Method(http.MethodGet).
-						DocResponses(drr.Response{Status: http.StatusOK}).
+						DocResponses(ave.Response{Status: http.StatusOK}).
 						HandlerFunc(indexUsers)
 				})
 			})
@@ -47,7 +69,7 @@ func Routes() *drr.Route {
 				DocDescription("creates an event and returns its details").
 				Method(http.MethodPost).
 				Path("events").
-				DocBody(drr.Key{Name: "title", Type: "string", Required: true}).
+				DocBody(ave.Key{Name: "title", Type: "string", Required: true}).
 				HandlerFunc(createEvent)
 		})
 	})
